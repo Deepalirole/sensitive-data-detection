@@ -11,11 +11,11 @@ Two layers:
 
 from __future__ import annotations
 
-import os
 import re
 
 from detector import Match, summarize_counts
 from classifier import classify, generate_summary
+from llm_client import complete
 
 
 def _rule_based_answer(question: str, text: str, matches: list[Match]) -> str | None:
@@ -62,31 +62,17 @@ def _rule_based_answer(question: str, text: str, matches: list[Match]) -> str | 
 
 
 def _llm_answer(question: str, text: str, matches: list[Match]) -> str | None:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return None
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=api_key)
-        # Keep context bounded.
-        context = text[:6000]
-        counts = summarize_counts(matches)
-        findings = ", ".join(f"{c}={n}" for c, n in counts.items()) or "none"
-        prompt = (
-            "You answer questions about an uploaded document for a data "
-            "compliance assistant. Detected sensitive data summary: "
-            f"{findings}.\n\nDocument excerpt:\n{context}\n\n"
-            f"Question: {question}\nAnswer concisely."
-        )
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return resp.choices[0].message.content
-    except Exception:
-        return None
+    # Keep context bounded.
+    context = text[:6000]
+    counts = summarize_counts(matches)
+    findings = ", ".join(f"{c}={n}" for c, n in counts.items()) or "none"
+    prompt = (
+        "You answer questions about an uploaded document for a data "
+        "compliance assistant. Detected sensitive data summary: "
+        f"{findings}.\n\nDocument excerpt:\n{context}\n\n"
+        f"Question: {question}\nAnswer concisely."
+    )
+    return complete(prompt)
 
 
 def answer(question: str, text: str, matches: list[Match]) -> str:

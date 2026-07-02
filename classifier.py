@@ -11,9 +11,8 @@ summary is used so the app always works offline.
 
 from __future__ import annotations
 
-import os
-
 from detector import Match, summarize_counts
+from llm_client import complete
 
 # Categories mapped to the compliance regimes they implicate.
 _COMPLIANCE_MAP = {
@@ -104,30 +103,18 @@ def _rule_based_summary(matches: list[Match], level: str, counts: dict[str, int]
 
 
 def _llm_summary(text: str, matches: list[Match], level: str, counts: dict[str, int]) -> str | None:
-    """Try an OpenAI-generated narrative; return None if unavailable."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+    """Try an LLM-generated narrative (Gemini/OpenAI); None if unavailable."""
+    if not matches:
         return None
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=api_key)
-        findings = "\n".join(f"- {c}: {n}" for c, n in counts.items())
-        prompt = (
-            "You are a data protection & compliance analyst. Based on the "
-            f"detected sensitive data below (risk level: {level}), write a concise "
-            "report with three sections: Compliance Observations, Security Risks, "
-            "and Suggested Remediation. Reference GDPR, PCI-DSS and India's DPDP "
-            f"Act where relevant.\n\nDetected data:\n{findings}"
-        )
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return resp.choices[0].message.content
-    except Exception:
-        return None
+    findings = "\n".join(f"- {c}: {n}" for c, n in counts.items())
+    prompt = (
+        "You are a data protection & compliance analyst. Based on the "
+        f"detected sensitive data below (risk level: {level}), write a concise "
+        "report with three sections: Compliance Observations, Security Risks, "
+        "and Suggested Remediation. Reference GDPR, PCI-DSS and India's DPDP "
+        f"Act where relevant.\n\nDetected data:\n{findings}"
+    )
+    return complete(prompt)
 
 
 def generate_summary(text: str, matches: list[Match], level: str, counts: dict[str, int]) -> str:
