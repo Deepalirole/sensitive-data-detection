@@ -1,0 +1,24 @@
+CONFIDENTIAL - Internal Use Only
+
+Employee Onboarding Record
+--------------------------
+Name: Rahul Sharma
+Employee ID: EMP-2024-00187
+Email: rahul.sharma@example.com
+Phone: +91 9876543210
+PAN: ABCDE1234F
+Aadhaar: 2345 6789 0123
+
+Payroll / Banking
+-----------------
+Bank Account Number: 123456789012
+IFSC Code: HDFC0001234
+Corporate Card: 4111 1111 1111 1111
+
+System Access
+-------------
+API_KEY = sk-ABCDEF1234567890abcdef
+password = SuperSecret!23
+
+Note: This document contains proprietary trade secret information and
+must not be distributed outside the organization.
